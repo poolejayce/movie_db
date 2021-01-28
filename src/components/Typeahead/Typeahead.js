@@ -55,7 +55,6 @@ const Typeahead = () => {
                 onSearch={() => {}}
                 paginate
                 placeholder="Search movies, TV shows, and celebrities"
-                //TODO: set up results views into own component
                 renderMenuItemChildren={option => (
                     <TypeaheadResults props={option}></TypeaheadResults>
                 )}>
