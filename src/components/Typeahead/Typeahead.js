@@ -4,6 +4,9 @@ import {AsyncTypeahead} from 'react-bootstrap-typeahead';
 import TypeaheadResults from './TypeaheadResults/TypeaheadResults';
 import './Typeahead.css';
 
+const apiKey = '6e92bc67004a571503673da0fd8facc1';
+const searchUrl = 'https://api.themoviedb.org/3/';
+
 const Typeahead = () => {
     const [loading, setLoading] = useState(false);
     const [query, setQuery] = useState('');
@@ -11,17 +14,29 @@ const Typeahead = () => {
 
     let cache = {};
 
-    const handleInputChange = query => {
+    const makeAndHandleRequest = async (query, page = 1) => {
+        return await fetch(`${searchUrl}search/multi?language=en-US&query=${query}&api_key=${apiKey}&page=${page}&region=USA&include_adult=false`)
+        .then(resp => resp.json())
+        .then(({page, results, total_results, total_pages}) => {
+            const options = results.map(i => ({
+                id: i.id,
+                posterPath: i.poster_path,
+                mediaType: i.media_type,
+                name: i.name
+            }));
+            return {options, page, total_results, total_pages};
+        })
+    }
+
+    const handleInputChange = (query) => {
         setQuery(query);
+        if (query.length > 1){
+            handleSearch(query);
+        }
     }
 
     const handlePagination = (e, shownResults) => {
-        const currentState = {
-            loading: loading,
-            query: query,
-            options, options,
-        };
-        const cachedQuery = cache;
+        const cachedQuery = cache[query];
 
         if (
             cachedQuery.options.length > shownResults ||
@@ -34,30 +49,49 @@ const Typeahead = () => {
 
         const page = cachedQuery.page + 1;
 
+        makeAndHandleRequest(query, page).then(resp => {
+            const options = cachedQuery.options.concat(resp.options);
+            cache[query] = { ...cachedQuery, options, page};
+            setLoading(false);
+            setOptions(options);
+        })
 
-    }
+    };
 
-    // const makeAndHandleRequest(query, page = 1) {
-    //     return fetch(`${SEARCH_URI}?q=${query}`)
-    // }
+    const handleSearch = (query) => {
+        console.log('search');
+        if (cache[query]) {
+            setOptions(cache[query].options);
+            return;
+        }
+
+        setLoading(true);
+        makeAndHandleRequest(query).then(resp => {
+            cache[query] = { ...resp, page: 1};
+            setLoading(false);
+            setOptions(resp.options);
+        });
+    };
+
+     
 
     return(
         <div className='async-typeahead-wrapper'>
             <AsyncTypeahead 
-                isLoading={loading} 
-                delay={250}
                 id='async-typeahead'
-                labelKey='search'
+                labelKey='name'
                 maxResults={20}
-                minLength={2}
                 onInputChange={handleInputChange}
-                onPaginate={() => {}}
-                onSearch={() => {}}
+                onPaginate={handlePagination}
+                onSearch={handleSearch}
+                options={options}
                 paginate
-                placeholder="Search movies, TV shows, and celebrities"
-                renderMenuItemChildren={option => (
-                    <TypeaheadResults props={option}></TypeaheadResults>
-                )}>
+                placeholder='Search movies, TV shows, and celebrities'
+                searchText="Searching.."
+                renderMenuItemChildren={(option) => (
+                    <TypeaheadResults id={option.id} name={option.name}></TypeaheadResults>
+                )}
+                query={query}>
             </AsyncTypeahead>
         </div>
     );
