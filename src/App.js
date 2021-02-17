@@ -11,9 +11,7 @@ function App() {
       <BrowserRouter>
         <Navbar></Navbar>
         <Switch>
-          <div>
-            <Route exact path='/'/>
-          </div>
+          <Route exact path='/'/>
         </Switch>
       </BrowserRouter>
     </div>

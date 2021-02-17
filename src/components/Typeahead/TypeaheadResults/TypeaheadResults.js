@@ -1,12 +1,12 @@
-import React, {useState} from 'react';
+import React from 'react';
 
 import './TypeaheadResults.css';
 
 const TypeaheadResults = (props) => {
 
+    console.log(props.name);
     return(
        <div key={props.id}>
-            <img></img>
             <span>{props.name}</span>
         </div>
     );
